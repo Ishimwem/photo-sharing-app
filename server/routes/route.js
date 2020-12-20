@@ -13,8 +13,12 @@ router.post('/photo', (req, res) => {
     photoController.uploadPhoto(req, res);
 });
 
-router.get('/photo/:name', (req, res) => {
+router.get('/photo/:id', (req, res) => {
     photoController.getPhoto(req, res);
+});
+
+router.delete('/photo/:id', (req, res) => {
+    photoController.deletePhoto(req, res);
 });
 
 module.exports = router;

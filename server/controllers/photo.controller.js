@@ -1,108 +1,171 @@
 const mongoose = require('mongoose');
+const util = require("util");
 const multer  = require('multer');
 const GridFsStorage = require('multer-gridfs-storage');
 var Grid = require('gridfs-stream');
 
+let gfs, gridFSBucket;
 
-const connection = mongoose.createConnection('mongodb://localhost:27017/photo-sharing', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true });
+const getConnection = async () => { 
+    try {
+        await mongoose.connect('mongodb://localhost:27017/photo-sharing', { useNewUrlParser: true });
+        console.log('Connection to MongoDB successful');
+    } catch (error) {
+        console.log('Error in MongoDb connection: ' + error);
+    }
+ };
 
-connection.on("error", () => {
-    console.log("[-] Error occurred from the database");
+ getConnection();
+
+mongoose.connection.on("error", () => {
+    console.log("Error occurred from the database");
 });
       
-let gfs, gridFSBucket;
-      
-connection.once("open", () => {
-    gridFSBucket = new mongoose.mongo.GridFSBucket(connection.db, {
-        bucketName: "file_uploads"
+mongoose.connection.once("open", () => {
+    gridFSBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+        bucketName: "photos"
     });
     // Initialize stream
-    gfs = Grid(connection.db, mongoose.mongo);;
-    gfs.collection("file_uploads");
-    console.log("[!] The database connection opened successfully in GridFS service");
+    gfs = Grid(mongoose.connection.db, mongoose.mongo);;
+    gfs.collection("photos");
+    console.log("Initialized file stream to GridFS");
 });
-      
 
-function getPhoto(req, res) {
-    gfs.files.findOne({filename: req.params.name}, (err, file) =>{
-        if(!file || file.length === 0) {
-            return res.status(404).json({
-           err: 'No file exist'
-            });
-        }
-        else{
-            const readstream = gfs.createReadStream(file.filename);
-            readstream.pipe(res);
-        }
-    });
-
-}
-
-function getAllPhotos(req, res) {
-    gfs.files.find().toArray((err, files) =>{
-      if(!files || files.length === 0) {
-          return res.status(404).json({
-            err: "No file exist"
-          });
-      }
-      return res.json(files);
-    });
-}
-
-
-// const createGridFSReadStream = id => {
-// return gridFSBucket.openDownloadStream(mongoose.Types.ObjectId(id));
-// };
-
-
+//Configure storage: to be used for uploading pictures
 const storage = new GridFsStorage({
     url: 'mongodb://localhost:27017/photo-sharing',
     file: (req, file) => {
         return new Promise(resolve => {
-        const fileInfo = {
-            filename: file.originalname,
-            bucketName: "file_uploads"
-        };
-        resolve(fileInfo);
+            const fileInfo = {
+                filename: file.originalname,
+                bucketName: "photos"
+            };
+            resolve(fileInfo);
         });
     }
 });
 
 storage.on("connection", () => {
-    console.log("[!] Successfully accessed the GridFS database");
+    console.log("Connected to GridFS storage");
 });
 
-storage.on("connectionFailed", err => {
-    console.log(err.message);
+storage.on("connectionFailed", error => {
+    console.log("Connection to GrifFS strorage failed: " + error.message);
 });
 
-const upload = multer({ storage });
-
-uploadFile = upload.single('photo');
-// function uploadFile(req, res) {
-//     res.send('Getting into uploadPhoto');
-
-// }
-
-function uploadPhoto(req, res) {
-    uploadFile(req, res, (err) => {
-      if(err){
-          return res.status(400).send(err);
-      }
-      //res.status(200).send("File has been uploaded")
-      res.status(200).send({
-          file: req.file,
-          message: "File has been uploaded"
-      })
+      
+function retrievePhotoFromDb(id) {
+    return new Promise((resolve, reject) => {
+        gfs.files.findOne({_id: mongoose.Types.ObjectId(id)}, (error, file) =>{
+            if (error){
+                reject(error);
+            }
+            if(!file || file.length === 0) {
+                resolve(null)
+            } else {
+                resolve(file);     
+            }
+        });
     });
 };
-module.exports = { uploadPhoto, getPhoto, getAllPhotos };
+
+//create next for function that handles error
+async function getPhoto(req, res){
+    try{
+        file = await retrievePhotoFromDb(req.params.id);
+        if (!file){
+            return res.status(404).json({
+                error: 'Photo does not exist'
+            });
+        }
+
+        //might need some promise or its own function that returns a promise and use await/async
+        const readstream = gridFSBucket.openDownloadStream(mongoose.Types.ObjectId(file._id));
+        readstream.pipe(res);
+
+    } catch {
+        console.log('Error in retrieving the photo: ' + error);
+        res.status(404).json({
+            error: "Error in getting photo"
+        });
+
+    }
+}
+
+function retrievePhotosFromDb(){
+    return new Promise((resolve, reject) => {
+        gfs.files.find().toArray((error, files) =>{
+            if (error){
+                reject(error);
+            }
+            if(!files || files.length === 0) {
+                resolve(null)
+            } else {
+                resolve(files);     
+            }
+        });
+    });
+};
+
+async function getAllPhotos(req, res) {
+    try{
+        files = await retrievePhotosFromDb();
+        if (!files){
+            res.status(404).json({
+                error: 'No available photos'
+            });
+        }
+        res.status(200).json(files);
+
+    } catch {
+        console.log('Error in retrieving photos: ' + error);
+        res.status(404).json({
+            error: "Error getting photos"
+        });
+
+    }
+}
 
 
-//module.exports = mongoose;
-//module.exports.getGridFSFiles = getGridFSFiles;
-//module.exports.createGridFSReadStream = createGridFSReadStream;
+function deletePhoto(req, res) {
+    try{
+        //maybe promisify this too???
+        gridFSBucket.delete(mongoose.Types.ObjectId(req.params.id));
+        res.status(200).json({
+            message: "Photo successfully deleted"
+        });
+
+    } catch (error){
+        //maybe use next(error) to pass them to express
+        console.log('Error in deleting photo: ' + error);
+        res.status(400).json({
+            error: "Error deleting photo"
+        });
+    }
+    
+}
+
+async function uploadPhoto(req, res) {
+    try {
+        const upload = util.promisify(multer({ storage }).single('photo'));
+        await upload(req, res);
+        res.status(200).json({
+            file: req.file,
+            message: "Photo has been uploaded"
+        });
+
+    } catch {
+        console.log('Error uploading photo: ' + error);
+        res.status(400).json({
+            error: "Error uploading photo"
+        });
+    }
+    
+
+
+}
+
+module.exports = { uploadPhoto, getPhoto, getAllPhotos, deletePhoto };
+
 
 
