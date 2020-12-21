@@ -79,7 +79,6 @@ async function getPhoto(req, res){
             });
         }
 
-        //might need some promise or its own function that returns a promise and use await/async
         const readstream = gridFSBucket.openDownloadStream(mongoose.Types.ObjectId(file._id));
         readstream.pipe(res);
 
@@ -129,14 +128,12 @@ async function getPhotos(req, res) {
 
 function deletePhoto(req, res) {
     try{
-        //maybe promisify this too???
         gridFSBucket.delete(mongoose.Types.ObjectId(req.params.id));
         res.status(200).json({
             message: "Photo successfully deleted"
         });
 
     } catch (error){
-        //maybe use next(error) to pass them to express
         console.log('Error in deleting photo: ' + error);
         res.status(400).json({
             error: "Error deleting photo"
