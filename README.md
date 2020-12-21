@@ -15,9 +15,16 @@ This is a simple photo sharing web application that supports adding and deleting
 
 ## Features Implemented
 Backend: Adding, retrieving and deleting photos 
-* To-do: Implement tests
 Frontend: Basic gallery
-* To-do: Implement photo upload, delete features, implement tests, improve UI
+
+## To-do
+Backend:
+* Implement tests
+* Proper documentation/comments
+Frontend:
+* Implement remaining features: photo upload and deletion
+* Add tests
+* Improve UI
 
 ## Potential additional features:
 * Photo captioning
