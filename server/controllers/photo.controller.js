@@ -107,7 +107,7 @@ function retrievePhotosFromDb(){
     });
 };
 
-async function getAllPhotos(req, res) {
+async function getPhotos(req, res) {
     try{
         files = await retrievePhotosFromDb();
         if (!files){
@@ -165,7 +165,7 @@ async function uploadPhoto(req, res) {
 
 }
 
-module.exports = { uploadPhoto, getPhoto, getAllPhotos, deletePhoto };
+module.exports = { uploadPhoto, getPhoto, getPhotos, deletePhoto };
 
 
 

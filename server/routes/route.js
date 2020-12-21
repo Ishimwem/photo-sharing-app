@@ -4,20 +4,20 @@ const router = express.Router();
 const photoController = require("../controllers/photo.controller");
 
 
-router.get('/', (req, res, next) => {
+router.get('/photos', (req, res, next) => {
     //res.send("Hello World");
-    photoController.getAllPhotos(req, res);
+    photoController.getPhotos(req, res);
 });
 
-router.post('/photo', (req, res) => {
+router.post('/photos', (req, res) => {
     photoController.uploadPhoto(req, res);
 });
 
-router.get('/photo/:id', (req, res) => {
+router.get('/photos/:id', (req, res) => {
     photoController.getPhoto(req, res);
 });
 
-router.delete('/photo/:id', (req, res) => {
+router.delete('/photos/:id', (req, res) => {
     photoController.deletePhoto(req, res);
 });
 
