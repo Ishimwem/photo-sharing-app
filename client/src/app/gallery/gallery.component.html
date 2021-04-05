@@ -1,7 +1,24 @@
-
-<div class="container card-container" *ngIf="photos">    
-      <div class="card card-small" *ngFor="let photo of photos" [routerLink]="['/photos', photo._id]">
-          <img src="/api/photos/{{photo._id}}" alt="" class="card-image"/>
-      </div>
+<div [ngStyle]="{'margin': '30px'}">
+    <nz-upload (nzChange)="handleChange($event)" nzAction="/api/photos" [nzShowUploadList]="inProgress">
+        <button nz-button nzType="default"><i nz-icon nzType="upload"></i>Click to Upload</button>
+    </nz-upload>
 </div>
 
+<ng-container *ngIf="photos">
+    <div [ngStyle]="{'margin': '30px'}">
+        <mat-grid-list cols="6">
+            <mat-grid-tile *ngFor="let photo of photos">
+
+                <img nz-image width="200px" height="200px" nzSrc="/api/photos/{{photo._id}}" alt="" />
+
+                <mat-grid-tile-footer style="float: left;">
+                    <span nzTooltipTitle="Delete photo" nzTooltipPlacement="bottomLeft" nz-tooltip
+                        (click)="deletePhoto(photo._id)">
+                        <i nz-icon nzType="delete"></i></span>
+                </mat-grid-tile-footer>
+
+            </mat-grid-tile>
+        </mat-grid-list>
+
+    </div>
+</ng-container>

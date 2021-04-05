@@ -144,7 +144,7 @@ function deletePhoto(req, res) {
 
 async function uploadPhoto(req, res) {
     try {
-        const upload = util.promisify(multer({ storage }).single('photo'));
+        const upload = util.promisify(multer({ storage }).single('file'));
         await upload(req, res);
         res.status(200).json({
             file: req.file,
