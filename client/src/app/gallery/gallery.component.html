@@ -1,24 +1,41 @@
-<div [ngStyle]="{'margin': '30px'}">
-    <nz-upload (nzChange)="handleChange($event)" nzAction="/api/photos" [nzShowUploadList]="inProgress">
-        <button nz-button nzType="default"><i nz-icon nzType="upload"></i>Click to Upload</button>
-    </nz-upload>
-</div>
-
-<ng-container *ngIf="photos">
-    <div [ngStyle]="{'margin': '30px'}">
-        <mat-grid-list cols="6">
-            <mat-grid-tile *ngFor="let photo of photos">
-
-                <img nz-image width="200px" height="200px" nzSrc="/api/photos/{{photo._id}}" alt="" />
-
-                <mat-grid-tile-footer style="float: left;">
-                    <span nzTooltipTitle="Delete photo" nzTooltipPlacement="bottomLeft" nz-tooltip
-                        (click)="deletePhoto(photo._id)">
-                        <i nz-icon nzType="delete"></i></span>
-                </mat-grid-tile-footer>
-
-            </mat-grid-tile>
-        </mat-grid-list>
-
+<div style="display: flex; flex-direction:column;">
+    <div class="page-header">
+        <div class="page-title" >
+            <h2 [ngStyle]="{'color': 'lightslategray'}">Gallery</h2>
+          </div>
+          <div class="upload">
+            <nz-upload [nzShowUploadList]="false" (nzChange)="handleChange($event)" nzAction="/api/photos">
+                <button nz-button nzType="primary"><i nz-icon nzType="upload"></i>Upload Photo</button>
+            </nz-upload>
+          </div>
+        
     </div>
-</ng-container>
+    
+    <ng-container *ngIf="photos">
+        <div class="gallery">
+            <mat-grid-list cols="4" gutterSize="8px">
+                <nz-image-group><mat-grid-tile *ngFor="let photo of photos">
+                    <img nz-image width="250px" height="250px" nzSrc="/api/photos/{{photo._id}}" alt="" />
+                    <mat-grid-tile-footer style="float: left;">
+                        <button nz-button nzShape="circle" nzSize="small" nzGhost style="position: absolute; right: 5px; bottom: 5px;" 
+                            (click)="deletePhoto(photo._id)">
+                            <i nz-icon nzType="delete" nzTheme="fill"></i></button>
+                    </mat-grid-tile-footer>
+    
+                </mat-grid-tile></nz-image-group>
+                
+            </mat-grid-list>
+            <!-- <div nz-row [nzGutter]="[5, 5]">
+                <div *ngFor="let photo of photos" nz-col nzSpan="8" style="position: relative;">
+                    <button nz-button nzShape="circle" nzGhost style="position: absolute; right: 5px; top: 5px;" 
+                            (click)="deletePhoto(photo._id)">
+                            <i nz-icon nzType="delete" nzTheme="fill"></i></button>
+                    <img style="width: 100%;
+                    height: 100%;
+                    object-fit: cover;" nz-image width="200px" height="200px" nzSrc="/api/photos/{{photo._id}}" alt="" />
+                </div>
+              </div> -->
+    
+        </div>
+    </ng-container>
+</div>
